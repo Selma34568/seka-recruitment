@@ -87,12 +87,22 @@ export default function Home() {
             <div className="rounded-xl bg-blue-600 px-4 py-3 font-semibold">
               Dashboard
             </div>
-            <div className="rounded-xl px-4 py-3 text-slate-300">
-              Candidates
-            </div>
-            <div className="rounded-xl px-4 py-3 text-slate-300">
-              Branches
-            </div>
+            
+<Link
+  href="/candidates"
+  className="block rounded-xl px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white"
+>
+  Candidates
+</Link>
+
+            
+<Link
+  href="/branches"
+  className="block rounded-xl px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white"
+>
+  Branches
+</Link>
+
             
           <Link
             href="/pipeline"
