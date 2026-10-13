@@ -1,0 +1,22 @@
+# Secrets and environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Next.js
+node_modules/
+.next/
+.vercel/
+out/
+
+# Uploaded candidate CVs
+uploads/
+
+# Logs
+*.log
