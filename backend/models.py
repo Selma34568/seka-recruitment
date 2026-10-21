@@ -84,3 +84,34 @@ class Application(Base):
     branch: Mapped["Branch"] = relationship(
         back_populates="applications"
     )
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True
+    )
+
+    entra_object_id: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False
+    )
+
+    full_name: Mapped[str] = mapped_column(
+        String(200), nullable=False
+    )
+
+    role: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="BRANCH_MANAGER"
+    )
+
+    branch_id: Mapped[int | None] = mapped_column(
+        ForeignKey("branches.id"), nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now
+    )

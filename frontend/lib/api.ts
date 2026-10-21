@@ -27,10 +27,20 @@ export type Candidate = {
   applications: Application[];
 };
 
-export async function getCandidates(): Promise<Candidate[]> {
-  const response = await fetch(`${API_URL}/candidates`, {
-    cache: "no-store",
-  });
+export async function getCandidates(
+  role: "ADMIN" | "HR_MANAGER" | "BRANCH_MANAGER" = "ADMIN",
+  branchId?: number | null
+): Promise<Candidate[]> {
+  const params = new URLSearchParams({ role });
+
+  if (role === "BRANCH_MANAGER" && branchId != null) {
+    params.set("branch_id", String(branchId));
+  }
+
+  const response = await fetch(
+    `${API_URL}/demo/candidates?${params.toString()}`,
+    { cache: "no-store" }
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch candidates");
@@ -39,17 +49,6 @@ export async function getCandidates(): Promise<Candidate[]> {
   return response.json();
 }
 
-export async function getBranches(): Promise<Branch[]> {
-  const response = await fetch(`${API_URL}/branches`, {
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch branches");
-  }
-
-  return response.json();
-}
 
 
 
@@ -66,7 +65,7 @@ export async function updateApplicationStatus(
   status: RecruitmentStatus
 ): Promise<void> {
   const response = await fetch(
-    `${API_URL}/applications/${applicationId}/status`,
+    `${API_URL}/demo/applications/${applicationId}/status`,
     {
       method: "PATCH",
       headers: {
@@ -94,7 +93,7 @@ export type CandidateCreate = {
 export async function createCandidate(
   data: CandidateCreate
 ): Promise<Candidate> {
-  const response = await fetch(`${API_URL}/candidates`, {
+  const response = await fetch(`${API_URL}/demo/candidates`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -103,6 +102,18 @@ export async function createCandidate(
   if (!response.ok) {
     const error = await response.json().catch(() => null);
     throw new Error(error?.detail?.toString() || "Could not create candidate");
+  }
+
+  return response.json();
+}
+
+export async function getBranches(): Promise<Branch[]> {
+  const response = await fetch(`${API_URL}/branches`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch branches");
   }
 
   return response.json();

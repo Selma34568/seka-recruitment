@@ -1,12 +1,14 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   updateApplicationStatus,
   type RecruitmentStatus,
 } from "../../../lib/api";
+
+type Language = "PL" | "EN";
 
 const statuses: RecruitmentStatus[] = [
   "NEW",
@@ -22,6 +24,39 @@ type Props = {
   currentStatus: string;
 };
 
+const translations = {
+  PL: {
+    title: "Status rekrutacji",
+    save: "Zapisz status",
+    saving: "Zapisywanie...",
+    success: "Status został pomyślnie zaktualizowany!",
+    error: "Nie udało się zmienić statusu. Spróbuj ponownie.",
+    statuses: {
+      NEW: "Nowe",
+      REVIEW: "Weryfikacja",
+      INTERVIEW: "Rozmowa kwalifikacyjna",
+      OFFER: "Oferta",
+      HIRED: "Zatrudniony",
+      REJECTED: "Odrzucony",
+    },
+  },
+  EN: {
+    title: "Recruitment Status",
+    save: "Save Status",
+    saving: "Saving...",
+    success: "Status updated successfully!",
+    error: "Could not update status. Please try again.",
+    statuses: {
+      NEW: "New",
+      REVIEW: "In Review",
+      INTERVIEW: "Interview",
+      OFFER: "Offer",
+      HIRED: "Hired",
+      REJECTED: "Rejected",
+    },
+  },
+};
+
 export default function StatusSelector({
   applicationId,
   currentStatus,
@@ -33,6 +68,8 @@ export default function StatusSelector({
       ? (currentStatus as RecruitmentStatus)
       : "NEW";
 
+  const [language, setLanguage] = useState<Language>("PL");
+
   const [selectedStatus, setSelectedStatus] =
     useState<RecruitmentStatus>(initialStatus);
 
@@ -42,6 +79,37 @@ export default function StatusSelector({
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  const t = translations[language];
+
+  useEffect(() => {
+    function syncLanguage() {
+      const saved = window.localStorage.getItem("seka-language");
+
+      if (saved === "PL" || saved === "EN") {
+        setLanguage(saved);
+      }
+    }
+
+    syncLanguage();
+
+    function handleStorage(event: StorageEvent) {
+      if (
+        event.key === "seka-language" &&
+        (event.newValue === "PL" || event.newValue === "EN")
+      ) {
+        setLanguage(event.newValue);
+      }
+    }
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("seka-language-change", syncLanguage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("seka-language-change", syncLanguage);
+    };
+  }, []);
 
   function handleSave() {
     setMessage("");
@@ -55,11 +123,11 @@ export default function StatusSelector({
         );
 
         setSavedStatus(selectedStatus);
-        setMessage("Status updated successfully!");
+        setMessage(t.success);
 
         router.refresh();
       } catch {
-        setError("Could not update status. Please try again.");
+        setError(t.error);
       }
     });
   }
@@ -70,7 +138,7 @@ export default function StatusSelector({
         htmlFor={`status-${applicationId}`}
         className="mb-2 block text-sm font-semibold"
       >
-        Recruitment Status
+        {t.title}
       </label>
 
       <div className="flex flex-wrap gap-3">
@@ -87,7 +155,7 @@ export default function StatusSelector({
         >
           {statuses.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {t.statuses[status]}
             </option>
           ))}
         </select>
@@ -95,12 +163,10 @@ export default function StatusSelector({
         <button
           type="button"
           onClick={handleSave}
-          disabled={
-            isPending || selectedStatus === savedStatus
-          }
+          disabled={isPending || selectedStatus === savedStatus}
           className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isPending ? "Saving..." : "Save Status"}
+          {isPending ? t.saving : t.save}
         </button>
       </div>
 

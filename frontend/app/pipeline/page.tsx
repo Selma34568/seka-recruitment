@@ -10,6 +10,8 @@ import {
   type Branch,
 } from "../../lib/api";
 
+type Language = "PL" | "EN";
+
 const statuses = [
   "NEW",
   "REVIEW",
@@ -28,7 +30,53 @@ const statusColors: Record<string, string> = {
   REJECTED: "bg-red-100 text-red-700",
 };
 
+const translations = {
+  PL: {
+    back: "Powrót do panelu głównego",
+    title: "Proces rekrutacji",
+    description: "Śledź zgłoszenia na poszczególnych etapach rekrutacji.",
+    add: "+ Dodaj kandydata",
+    search: "Szukaj kandydatów...",
+    allCities: "Wszystkie miasta",
+    applications: "Zgłoszenia",
+    loading: "Ładowanie procesu rekrutacji...",
+    error: "Nie udało się pobrać danych rekrutacyjnych.",
+    empty: "Brak zgłoszeń",
+    footer: "Wersja demonstracyjna",
+    statuses: {
+      NEW: "Nowe",
+      REVIEW: "Weryfikacja",
+      INTERVIEW: "Rozmowa",
+      OFFER: "Oferta",
+      HIRED: "Zatrudniony",
+      REJECTED: "Odrzucony",
+    },
+  },
+  EN: {
+    back: "Back to Dashboard",
+    title: "Recruitment Pipeline",
+    description: "Track applications across recruitment stages.",
+    add: "+ Add Candidate",
+    search: "Search candidates...",
+    allCities: "All Cities",
+    applications: "Applications",
+    loading: "Loading recruitment pipeline...",
+    error: "Could not load recruitment data.",
+    empty: "No applications",
+    footer: "Demo Version",
+    statuses: {
+      NEW: "New",
+      REVIEW: "In Review",
+      INTERVIEW: "Interview",
+      OFFER: "Offer",
+      HIRED: "Hired",
+      REJECTED: "Rejected",
+    },
+  },
+};
+
 export default function PipelinePage() {
+  const [language, setLanguage] = useState<Language>("PL");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [city, setCity] = useState("ALL");
@@ -36,7 +84,24 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const t = translations[language];
+
   useEffect(() => {
+    const savedLanguage = window.localStorage.getItem("seka-language");
+
+    if (savedLanguage === "PL" || savedLanguage === "EN") {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  function changeLanguage(nextLanguage: Language) {
+    setLanguage(nextLanguage);
+    window.localStorage.setItem("seka-language", nextLanguage);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
     async function loadData() {
       try {
         const [candidateData, branchData] = await Promise.all([
@@ -44,16 +109,26 @@ export default function PipelinePage() {
           getBranches(),
         ]);
 
-        setCandidates(candidateData);
-        setBranches(branchData);
+        if (!cancelled) {
+          setCandidates(candidateData);
+          setBranches(branchData);
+        }
       } catch {
-        setError("Could not load recruitment data.");
+        if (!cancelled) {
+          setError("load");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadData();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const applications = useMemo(
@@ -97,30 +172,44 @@ export default function PipelinePage() {
               href="/"
               className="text-sm font-semibold text-blue-600 hover:underline"
             >
-              ← Back to Dashboard
+              ← {t.back}
             </Link>
 
             <h1 className="mt-5 text-3xl font-bold">
-              Recruitment Pipeline
+              {t.title}
             </h1>
 
             <p className="mt-2 text-sm text-slate-500">
-              Track applications across recruitment stages.
+              {t.description}
             </p>
           </div>
 
-          <Link
-            href="/candidates/new"
-            className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            + Add Candidate
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              aria-label="Language"
+              value={language}
+              onChange={(event) =>
+                changeLanguage(event.target.value as Language)
+              }
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"
+            >
+              <option value="PL">🇵🇱 Polski</option>
+              <option value="EN">🇬🇧 English</option>
+            </select>
+
+            <Link
+              href="/candidates/new"
+              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              {t.add}
+            </Link>
+          </div>
         </div>
 
         <div className="mb-7 flex flex-wrap gap-3">
           <input
             type="search"
-            placeholder="Search candidates..."
+            placeholder={t.search}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="w-64 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500"
@@ -131,7 +220,7 @@ export default function PipelinePage() {
             onChange={(event) => setCity(event.target.value)}
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
           >
-            <option value="ALL">All Cities</option>
+            <option value="ALL">{t.allCities}</option>
             {branches.map((branch) => (
               <option key={branch.id} value={branch.city}>
                 {branch.city}
@@ -140,19 +229,22 @@ export default function PipelinePage() {
           </select>
 
           <div className="flex items-center rounded-lg bg-white px-4 py-3 text-sm text-slate-600">
-            {filtered.length} applications
+            {t.applications}: {filtered.length}
           </div>
         </div>
 
         {error && (
-          <p role="alert" className="mb-5 rounded-lg bg-red-50 p-4 text-red-700">
-            {error}
+          <p
+            role="alert"
+            className="mb-5 rounded-lg bg-red-50 p-4 text-red-700"
+          >
+            {t.error}
           </p>
         )}
 
         {loading ? (
           <p className="py-10 text-center text-slate-500">
-            Loading recruitment pipeline...
+            {t.loading}
           </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
@@ -170,7 +262,7 @@ export default function PipelinePage() {
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-bold ${statusColors[status]}`}
                     >
-                      {status}
+                      {t.statuses[status]}
                     </span>
 
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">
@@ -208,7 +300,7 @@ export default function PipelinePage() {
 
                     {items.length === 0 && (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-white/50 p-5 text-center text-xs text-slate-400">
-                        No applications
+                        {t.empty}
                       </div>
                     )}
                   </div>
@@ -219,7 +311,7 @@ export default function PipelinePage() {
         )}
 
         <p className="mt-8 text-center text-xs text-slate-400">
-          SEKA Recruitment Management System · Demo
+          SEKA Recruitment Management System · {t.footer}
         </p>
       </div>
     </main>
