@@ -14,6 +14,7 @@ export type Application = {
   status: string;
   applied_at: string;
   branch: Branch;
+  notes?: string | null;
 };
 
 export type Candidate = {

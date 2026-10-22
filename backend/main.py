@@ -633,3 +633,55 @@ def create_demo_candidate(
     )
 
     return db.scalar(statement)
+
+# HR Notes - local demonstration only
+from pydantic import BaseModel, Field
+
+
+class HRNoteUpdate(BaseModel):
+    notes: str = Field(max_length=5000)
+
+
+@app.patch(
+    "/demo/applications/{application_id}/notes",
+    include_in_schema=False,
+)
+def save_demo_hr_notes(
+    application_id: int,
+    data: HRNoteUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    if os.getenv("SEKA_DEMO_MODE", "").lower() != "true":
+        raise HTTPException(
+            status_code=404,
+            detail="Demo mode disabled",
+        )
+
+    if (
+        request.client is None
+        or request.client.host not in {"127.0.0.1", "::1"}
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Local demo only",
+        )
+
+    application = db.get(Application, application_id)
+
+    if application is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Application not found",
+        )
+
+    application.notes = data.notes.strip()
+
+    db.commit()
+    db.refresh(application)
+
+    return {
+        "saved": True,
+        "application_id": application.id,
+        "notes": application.notes,
+    }

@@ -28,6 +28,7 @@ class ApplicationResponse(BaseModel):
     status: str
     applied_at: datetime
     branch: BranchResponse
+    notes: str | None = None
 
 
 class CandidateResponse(BaseModel):

@@ -19,6 +19,7 @@ const translations = {
     candidates: "Kandydaci",
     branches: "Oddziały",
     pipeline: "Proces rekrutacji",
+    reports: "Raporty",
     system: "System zarządzania rekrutacją",
     title: "Panel rekrutacyjny",
     subtitle: "Zarządzaj kandydatami i zgłoszeniami rekrutacyjnymi.",
@@ -62,6 +63,7 @@ const translations = {
     candidates: "Candidates",
     branches: "Branches",
     pipeline: "Recruitment Pipeline",
+    reports: "Reports",
     system: "Recruitment Management System",
     title: "HR Dashboard",
     subtitle: "Manage candidates and recruitment applications.",
@@ -313,10 +315,17 @@ export default function Home() {
 
             <Link
               href="/pipeline"
+              
               className="block rounded-xl px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white"
             >
               {t.pipeline}
             </Link>
+            <Link
+  href="/reports"
+  className="block rounded-xl px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white"
+>
+  📊 {t.reports}
+</Link>
           </nav>
 
           <div className="mt-auto border-t border-slate-800 pt-5">

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import CVUpload from "./CVUpload";
 import StatusSelector from "./StatusSelector";
+import HRNotes from "./HRNotes";
 import type { Candidate } from "../../../lib/api";
 
 type Language = "PL" | "EN";
@@ -233,6 +234,10 @@ export default function CandidateDetailClient({
                     applicationId={application.id}
                     currentStatus={application.status}
                   />
+                  <HRNotes
+  applicationId={application.id}
+  initialNotes={application.notes}
+/>
                 </div>
               ))}
 
