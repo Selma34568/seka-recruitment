@@ -1,258 +1,539 @@
 # SEKA Recruitment Management System
 
-**A web-based recruitment management platform for SEKA, built with FastAPI, Next.js, TypeScript, and PostgreSQL.**
+**A modern, bilingual recruitment management platform for organizing candidates, managing job applications, and monitoring recruitment activities across multiple company branches.**
 
-**Project Status:** Functional Local Demo / Proof of Concept
+**Technology Stack:** Next.js 16 · React · TypeScript · FastAPI · Python · PostgreSQL · Tailwind CSS
 
-## Project Overview
+**Project Status:** Functional Demo / Proof of Concept
 
-SEKA Recruitment Management System is designed to help HR teams manage job applications across multiple company branches through a centralized interface.
+---
 
-The current prototype demonstrates candidate registration, recruitment tracking, branch organization, PDF CV management, and a bilingual Polish/English user interface.
+## 1. Project Overview
 
-The project was developed to demonstrate core functionality, validate business requirements, and support further discussions with SEKA stakeholders.
+The **SEKA Recruitment Management System** is a web-based application developed to simplify and centralize recruitment operations across multiple SEKA branches.
 
-## Implemented Features
+The platform provides HR teams with a structured environment for registering candidates, organizing job applications, managing CV documents, tracking recruitment stages, recording internal HR notes, and analyzing recruitment activities.
 
-### HR Dashboard
+The current implementation is a functional prototype designed for demonstration, testing, and further development based on company requirements.
 
-- Overview of candidates and recruitment applications
-- Statistics for recruitment stages
-- Candidate search and city filtering
-- Branch-based recruitment overview
-- Demo role selection for Administrator, HR Manager, and Branch Manager
+### Main Objectives
 
-### Candidate Management
+- Centralize candidate and job application information.
+- Organize recruitment activities by branch and city.
+- Simplify application status management.
+- Provide a clear overview of recruitment progress.
+- Support internal HR documentation and notes.
+- Present recruitment data through visual reports.
+- Provide a Polish-language interface with English support.
+- Establish a foundation for future company-wide integration.
 
-- Register new candidates
-- Create recruitment applications linked to branches
-- View candidate profiles and contact information
+---
+
+## 2. Key Features
+
+### 2.1 HR Dashboard
+
+A centralized dashboard for monitoring recruitment operations.
+
+**Features:**
+
+- Total candidate statistics
+- Application status summaries
+- Overview of ongoing recruitment activities
+- Candidate search functionality
+- City-based filtering
+- Quick access to candidate profiles
+- Navigation between recruitment modules
+
+The dashboard provides HR personnel with an overview of recruitment activity.
+
+### 2.2 Candidate Management
+
+The candidate management module allows HR staff to organize and review applicant information.
+
+**Features:**
+
+- Create candidate profiles
+- Store personal and contact information
+- Associate applications with specific branches
+- Record applied positions
+- View individual candidate profiles
 - Search and filter candidates
-- Update recruitment application statuses
-- Store and retrieve candidate information using PostgreSQL
+- Update application status
+- Access associated CV documents
 
-### Recruitment Pipeline
+Candidate and application records are stored in PostgreSQL.
 
-A visual recruitment workflow with six stages:
+### 2.3 Recruitment Pipeline
 
-- **NEW** — New application
-- **REVIEW** — Application under review
-- **INTERVIEW** — Interview stage
-- **OFFER** — Job offer
-- **HIRED** — Candidate hired
-- **REJECTED** — Application rejected
+The Recruitment Pipeline provides a visual overview of applications across six recruitment stages.
 
-Applications are displayed as cards, with search and city filtering.
+| Stage | Description |
+|---|---|
+| NEW | Newly received application |
+| REVIEW | Application under evaluation |
+| INTERVIEW | Candidate selected for an interview |
+| OFFER | Job offer stage |
+| HIRED | Successfully recruited candidate |
+| REJECTED | Application rejected |
 
-### Branch Management
+**Capabilities:**
 
-- Overview of company branches
-- Application counts by branch
-- City-based candidate filtering
-- Direct navigation to relevant candidate profiles
+- Visual recruitment stage columns
+- Candidate cards grouped by status
+- Search and city filtering
+- Candidate profile navigation
+- Application status tracking
 
-### PDF CV Management
+Recruitment status changes are managed through the candidate profile.
 
-- Upload PDF CV documents
-- Validate file type and maximum file size (5 MB)
-- Associate CV documents with candidate profiles
-- View uploaded CV documents
+### 2.4 HR Notes
 
-### Application Validation
+The HR Notes module provides an internal documentation area for recruitment applications.
 
-- Validate required application information
-- Detect missing city, position, or CV information
-- Generate Polish-language email previews requesting missing information
-- Support validated application submission through the backend
+**Features:**
 
-**Note:** Email preview generation is implemented. Automatic email sending and mailbox integration are not yet complete.
+- Write recruitment-related notes
+- Edit existing notes
+- Associate notes with an individual application
+- Store notes through the backend in PostgreSQL
+- Retrieve saved notes through candidate profiles
+- Maximum note length of 5,000 characters
+- Polish and English user interface
 
-### Bilingual User Interface
+This functionality is designed to support internal HR evaluation and communication.
+
+**Implementation scope:** The current version uses one editable notes field per application. Multi-user note histories, authorship auditing, and production access controls are future improvements.
+
+### 2.5 Recruitment Reports
+
+The Recruitment Reports module provides a structured overview of candidate and application statistics.
+
+**Report Page:** `/reports`
+
+**Available reports:**
+
+- Total number of candidates
+- Total number of applications
+- Applications in the interview stage
+- Applications in the offer stage
+- Distribution across recruitment stages
+- Recruitment application counts by city
+- Visual charts and statistical summaries
+
+Reports are calculated from application data retrieved through the backend demo API.
+
+The module supports both Polish and English.
+
+### 2.6 Branch Management
+
+The branch management module organizes recruitment activity across company locations.
+
+**Features:**
+
+- List company branches
+- Display each branch's city
+- Count recruitment applications per branch
+- Navigate to branch-specific candidate lists
+- Filter candidates by location
+
+The demo dataset includes branches in Warszawa, Kraków, Poznań, Wrocław, and Katowice.
+
+### 2.7 PDF CV Management
+
+The application provides basic document management for candidates.
+
+**Features:**
+
+- Upload candidate CV files
+- Support PDF documents
+- Validate file format
+- Enforce a maximum upload size of 5 MB
+- Associate uploaded CVs with candidate records
+- Open and view uploaded CV documents
+
+The prototype uses local file storage for uploaded documents.
+
+Production deployment will require appropriately secured and persistent document storage.
+
+### 2.8 Application Validation
+
+The backend contains an application intake validation workflow.
+
+**Capabilities:**
+
+- Check required application information
+- Detect missing city information
+- Detect missing position information
+- Validate CV attachments
+- Generate email previews requesting missing information
+- Support validated application submission
+
+The preview messages are generated in Polish.
+
+**Important:** The current implementation supports email preview generation, but automatic email delivery and live mailbox integration are not yet completed.
+
+### 2.9 Bilingual User Interface
 
 The application supports:
 
-- 🇵🇱 **Polish (Polski)**
-- 🇬🇧 **English**
+- **Polish (PL)** — Primary business language
+- **English (EN)** — Additional interface language
 
-Language selection is available across the main recruitment screens and is remembered locally in the browser.
+Language switching is implemented across the main recruitment modules, including the dashboard, candidate management, candidate profiles, branch management, reports, and recruitment pipeline.
 
-## Technology Stack
+The selected language is stored locally in the browser.
 
-| Layer | Technology |
+### 2.10 Demonstration Roles
+
+The dashboard provides a demonstration role selector:
+
+- Administrator
+- HR Manager
+- Branch Manager
+
+The demonstration includes simulated branch-based visibility to illustrate intended role workflows.
+
+**The role selector is part of the prototype and does not represent authenticated production access control.**
+
+---
+
+## 3. Technology Stack
+
+| Component | Technology |
 |---|---|
-| Frontend | Next.js 16, React, TypeScript |
+| Frontend Framework | Next.js 16 |
+| Frontend Language | TypeScript |
+| UI Library | React |
 | Styling | Tailwind CSS |
-| Backend | Python, FastAPI |
+| Backend Framework | FastAPI |
+| Backend Language | Python |
 | Database | PostgreSQL |
 | ORM | SQLAlchemy |
-| Validation | Pydantic |
-| Version Control | Git and GitHub |
+| Data Validation | Pydantic |
+| API Architecture | REST API |
+| Version Control | Git |
+| Repository Hosting | GitHub |
 
-## Project Structure
+### Architecture Overview
+
+The project follows a frontend–backend architecture.
+
+```text
+HR User
+   |
+   v
+Next.js Frontend
+   |
+   | HTTP / REST API
+   v
+FastAPI Backend
+   |
+   +---- PostgreSQL Database
+   |
+   +---- Candidate CV Storage
+   |
+   +---- Application Validation
+   |
+   +---- HR Notes
+```
+
+The frontend handles user interaction, while the FastAPI backend manages business logic, application data, and database operations.
+
+---
+
+## 4. Project Structure
 
 ```text
 seka-recruitment/
-├── backend/
-│   ├── main.py
-│   ├── database.py
-│   ├── models.py
-│   ├── schemas.py
-│   ├── auth.py
-│   ├── permissions.py
-│   ├── intake.py
-│   └── email_templates.py
-├── frontend/
-│   ├── app/
-│   │   ├── page.tsx
-│   │   ├── candidates/
-│   │   │   ├── page.tsx
-│   │   │   ├── new/
-│   │   │   └── [id]/
-│   │   ├── branches/
-│   │   └── pipeline/
-│   └── lib/
-│       └── api.ts
-└── README.md
+|
+|-- backend/
+|   |-- main.py
+|   |-- database.py
+|   |-- models.py
+|   |-- schemas.py
+|   |-- auth.py
+|   |-- permissions.py
+|   |-- application_validator.py
+|   |-- intake.py
+|   |-- email_templates.py
+|   |-- seed.py
+|   `-- ...
+|
+|-- frontend/
+|   |-- app/
+|   |   |-- page.tsx
+|   |   |-- candidates/
+|   |   |   |-- page.tsx
+|   |   |   |-- new/
+|   |   |   `-- [id]/
+|   |   |       |-- page.tsx
+|   |   |       |-- CandidateDetailClient.tsx
+|   |   |       |-- CVUpload.tsx
+|   |   |       |-- StatusSelector.tsx
+|   |   |       `-- HRNotes.tsx
+|   |   |
+|   |   |-- branches/
+|   |   |-- pipeline/
+|   |   |-- reports/
+|   |   `-- globals.css
+|   |
+|   `-- lib/
+|       `-- api.ts
+|
+|-- docs/
+|-- .gitignore
+`-- README.md
 ```
 
-## Running the Project Locally
+*Note: The HR Notes and Reports additions are part of the latest local development changes and should be committed and pushed to the repository.*
+
+---
+
+## 5. Local Installation
 
 ### Prerequisites
 
+Before running the project, install:
+
 - Python
 - Node.js and npm
-- PostgreSQL database
 - Git
+- Access to a PostgreSQL database
 
-### 1. Clone the repository
+### Step 1 — Clone the Repository
 
 ```bash
 git clone https://github.com/Selma34568/seka-recruitment.git
 cd seka-recruitment
 ```
 
-### 2. Configure the backend
+### Step 2 — Backend Setup
 
-Create a Python virtual environment and install the Python dependencies used by the project.
+Open the backend directory:
 
-Configure the PostgreSQL connection using `DATABASE_URL` in the local backend environment.
+```bash
+cd backend
+```
 
-Enable local demo mode only when using fictional test records:
+Create a Python virtual environment:
+
+```bash
+python -m venv .venv
+```
+
+Activate the environment on Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Install the backend's required Python dependencies according to the project's dependency configuration.
+
+Create a local `backend/.env` file containing your PostgreSQL connection:
 
 ```env
 DATABASE_URL=your_postgresql_connection_string
 SEKA_DEMO_MODE=true
 ```
 
-Start the FastAPI backend using the local development configuration:
+**Security:** Enable demo mode only for local testing with fictional candidate records.
+
+Start the backend:
 
 ```bash
-cd backend
 python -m uvicorn main:app --reload --host 127.0.0.1 --port 8001
 ```
 
-Backend API documentation:
+Backend address:
+
+`http://127.0.0.1:8001`
+
+FastAPI documentation:
 
 `http://127.0.0.1:8001/docs`
 
-### 3. Configure the frontend
+### Step 3 — Frontend Setup
 
-Open another terminal:
+Open a second terminal and navigate to the frontend directory:
 
 ```bash
 cd frontend
 npm install
 ```
 
-Create `frontend/.env.local`:
+Create a local `frontend/.env.local` file:
 
 ```env
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8001
 ```
 
-Start the frontend:
+Start the frontend development server:
 
 ```bash
 npm run dev
 ```
 
-Open:
+Open the application:
 
 `http://localhost:3000`
 
-### 4. Verify the frontend build
+### Step 4 — Verify the Frontend Build
 
 ```bash
 npm run build
 ```
 
-The final frontend build has been successfully tested in the local development environment.
+The existing frontend demo has previously passed a production build check. Newly added functionality should be checked again before release.
 
-## Demonstration Workflow
+---
 
-The prototype can be demonstrated using the following steps:
+## 6. Main Application Pages
 
-1. Open the HR Dashboard to view recruitment statistics.
-2. Choose a demonstration role and branch.
-3. Browse the candidate list and filter by city.
-4. Register a fictional candidate.
-5. Open the newly created candidate profile.
-6. Upload a test PDF CV.
-7. Change the recruitment status.
-8. Review the updated recruitment pipeline.
-9. Switch between Polish and English.
+| Route | Purpose |
+|---|---|
+| `/` | HR Dashboard |
+| `/candidates` | Candidate Management |
+| `/candidates/new` | New Candidate Registration |
+| `/candidates/[id]` | Candidate Profile, CV, Status, HR Notes |
+| `/branches` | Branch Management |
+| `/pipeline` | Recruitment Pipeline |
+| `/reports` | Recruitment Reports |
 
-## Authentication and Security
+---
 
-The backend contains groundwork for Microsoft Entra ID authentication and role-based access control.
+## 7. Demonstration Workflow
 
-However, the currently demonstrated role selector is a simulation and is **not a substitute for real authentication or authorization**.
+The following workflow illustrates the main functionality of the application.
 
-The demo-specific API endpoints are intended only for local development and fictional test records.
+1. Open the HR Dashboard.
+2. Review candidate and application statistics.
+3. Select a demonstration role and branch.
+4. Navigate to the Candidates module.
+5. Search or filter candidates by city.
+6. Register a fictional candidate.
+7. Open the candidate profile.
+8. Upload a test PDF CV.
+9. Change the recruitment status.
+10. Add an internal HR note.
+11. Open the Recruitment Pipeline.
+12. Review statistics in the Reports module.
+13. Switch between Polish and English.
 
-**Do not expose demo mode publicly or process real candidate information using the demo endpoints.**
+The demonstration uses fictional test data.
 
-Credentials, database passwords, uploaded CVs, and local environment files must not be committed to GitHub.
+---
 
-## Current Development Status
+## 8. Authentication and Security
 
-| Component | Status |
+The backend includes initial components for Microsoft Entra ID integration and role-based access control.
+
+However, complete production authentication and authorization are not yet configured.
+
+The local demo includes separate demonstration API endpoints and simulated role selection to illustrate the intended system behavior.
+
+### Important Security Considerations
+
+- Demo mode must not be publicly exposed.
+- Real candidate records must not be processed using unauthenticated demo endpoints.
+- Microsoft Entra ID authentication must be completed before production use.
+- Access to candidate records, HR notes, and CV files must be restricted according to authenticated user roles.
+- Branch-level permissions must be enforced server-side.
+- CV storage must be protected against unauthorized access.
+- Secrets, passwords, local environment files, and uploaded documents must not be committed to the repository.
+- Data processing and retention must comply with applicable privacy and GDPR requirements.
+
+**This prototype is intended for local demonstration and development, not unrestricted production use.**
+
+---
+
+## 9. Implementation Status
+
+| Feature | Status |
 |---|---|
 | HR Dashboard | Implemented |
 | Candidate Registration | Implemented |
 | Candidate Profiles | Implemented |
-| PDF CV Upload | Implemented |
-| Recruitment Status Updates | Implemented |
 | Branch and City Filtering | Implemented |
+| PDF CV Management | Implemented in demo |
+| Recruitment Status Management | Implemented |
 | Recruitment Pipeline | Implemented |
-| Polish/English Interface | Implemented |
-| Application Validation | Implemented |
+| HR Notes Interface | Implemented locally |
+| HR Notes Persistence | Requires final end-to-end verification |
+| Recruitment Reports | Implemented locally |
+| Polish / English Interface | Implemented |
+| Application Intake Validation | Implemented |
 | Missing-Information Email Preview | Implemented |
-| Frontend Production Build Test | Passed |
-| Microsoft Entra ID Production Login | Pending integration |
-| Automatic Email Sending | Not completed |
-| Production Deployment | Not completed |
+| Demo Role Simulation | Implemented |
+| Microsoft Entra ID Production Login | Pending |
+| Live Mailbox Integration | Pending |
+| Automatic Email Delivery | Pending |
+| Full Production Authorization | Pending |
+| Production Deployment | Pending |
 
-## Future Development
+---
 
-Before production deployment, the project requires:
+## 10. Future Development
 
-- Complete Microsoft Entra ID integration
-- Enforce authenticated, server-side role and branch permissions for all production workflows
-- Automatic mailbox integration and email notifications
-- Secure file storage and personal-data protection
-- Additional end-to-end and security testing
-- Production configuration and deployment
-- Alignment with SEKA's final infrastructure and technology requirements
+The next phase will focus on preparing the prototype for a production environment.
 
-## Project Purpose
+### Authentication and Permissions
 
-This repository presents a functional proof of concept for SEKA's recruitment management workflow.
+- Complete Microsoft Entra ID Single Sign-On.
+- Apply authenticated Administrator, HR Manager, and Branch Manager permissions.
+- Enforce branch-specific record access.
+- Secure all candidate, application, document, and HR notes endpoints.
 
-It demonstrates the application's main features and provides a foundation for further development based on stakeholder feedback.
+### Email Integration
 
-The system is currently intended for **local demonstration and testing**, not production use.
+- Connect the company's authorized recruitment mailbox.
+- Import incoming applications.
+- Extract relevant candidate information.
+- Validate missing information.
+- Send automatic requests for missing documents or details.
+- Maintain application correspondence history.
 
-## Repository
+### HR Workflow Improvements
 
-https://github.com/Selma34568/seka-recruitment
+- Interview scheduling
+- Recruitment history and audit trails
+- Multi-user HR notes and author attribution
+- Improved reporting and analytics
+- Candidate duplicate detection
+- Configurable recruitment workflows
+
+### Production Infrastructure
+
+- Secure database configuration
+- Persistent document storage
+- Monitoring and logging
+- Automated testing
+- Backup and recovery strategy
+- Privacy and data retention controls
+- Deployment configuration aligned with SEKA's final technical requirements
+
+---
+
+## 11. Project Scope
+
+This repository documents the current Next.js, FastAPI, and PostgreSQL demonstration implementation.
+
+The prototype provides a functional foundation for validating recruitment workflows and collecting feedback.
+
+Any future production implementation may require changes to the architecture, infrastructure, authentication, and integration strategy based on SEKA's final requirements.
+
+---
+
+## 12. Repository
+
+**GitHub:** https://github.com/Selma34568/seka-recruitment
+
+**Project:** SEKA Recruitment Management System
+
+**Current Version:** Functional Local Demonstration
+
+**Last Documentation Update:** October 2026
+
+---
+
+*Developed as a recruitment management proof of concept to support digitalization and improvement of SEKA's HR workflows.*
