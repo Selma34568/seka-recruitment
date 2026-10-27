@@ -18,5 +18,7 @@ out/
 # Uploaded candidate CVs
 uploads/
 
-# Logs
 *.log
+backend/test_cv.pdf
+
+
