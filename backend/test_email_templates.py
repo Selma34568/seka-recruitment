@@ -20,7 +20,7 @@ print(email["subject"])
 print("\nEMAIL BODY:")
 print(email["body"])
 
-assert "position" in email["body"].lower()
+assert "stanowisko" in email["body"].lower()
 assert "CV" in email["body"]
 
 print("\nEmail template test PASSED!")

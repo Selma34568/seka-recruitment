@@ -10,7 +10,7 @@ import {
 
 type Language = "PL" | "EN";
 
-const statuses: RecruitmentStatus[] = [
+const DEFAULT_STATUSES = [
   "NEW",
   "REVIEW",
   "INTERVIEW",
@@ -18,6 +18,10 @@ const statuses: RecruitmentStatus[] = [
   "HIRED",
   "REJECTED",
 ];
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://127.0.0.1:8001";
 
 type Props = {
   applicationId: number;
@@ -38,7 +42,7 @@ const translations = {
       OFFER: "Oferta",
       HIRED: "Zatrudniony",
       REJECTED: "Odrzucony",
-    },
+    } as Record<string, string>,
   },
   EN: {
     title: "Recruitment Status",
@@ -53,7 +57,7 @@ const translations = {
       OFFER: "Offer",
       HIRED: "Hired",
       REJECTED: "Rejected",
-    },
+    } as Record<string, string>,
   },
 };
 
@@ -63,18 +67,17 @@ export default function StatusSelector({
 }: Props) {
   const router = useRouter();
 
-  const initialStatus: RecruitmentStatus =
-    statuses.includes(currentStatus as RecruitmentStatus)
-      ? (currentStatus as RecruitmentStatus)
-      : "NEW";
-
   const [language, setLanguage] = useState<Language>("PL");
 
+  const [statuses, setStatuses] = useState<string[]>(
+    DEFAULT_STATUSES
+  );
+
   const [selectedStatus, setSelectedStatus] =
-    useState<RecruitmentStatus>(initialStatus);
+    useState(currentStatus);
 
   const [savedStatus, setSavedStatus] =
-    useState<RecruitmentStatus>(initialStatus);
+    useState(currentStatus);
 
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
@@ -84,7 +87,9 @@ export default function StatusSelector({
 
   useEffect(() => {
     function syncLanguage() {
-      const saved = window.localStorage.getItem("seka-language");
+      const saved = window.localStorage.getItem(
+        "seka-language"
+      );
 
       if (saved === "PL" || saved === "EN") {
         setLanguage(saved);
@@ -96,20 +101,87 @@ export default function StatusSelector({
     function handleStorage(event: StorageEvent) {
       if (
         event.key === "seka-language" &&
-        (event.newValue === "PL" || event.newValue === "EN")
+        (event.newValue === "PL" ||
+          event.newValue === "EN")
       ) {
         setLanguage(event.newValue);
       }
     }
 
     window.addEventListener("storage", handleStorage);
-    window.addEventListener("seka-language-change", syncLanguage);
+    window.addEventListener(
+      "seka-language-change",
+      syncLanguage
+    );
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("seka-language-change", syncLanguage);
+      window.removeEventListener(
+        "storage",
+        handleStorage
+      );
+      window.removeEventListener(
+        "seka-language-change",
+        syncLanguage
+      );
     };
   }, []);
+
+  useEffect(() => {
+    setSelectedStatus(currentStatus);
+    setSavedStatus(currentStatus);
+  }, [currentStatus]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStatuses() {
+      try {
+        const response = await fetch(
+          `${API_URL}/demo/statuses`,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load statuses");
+        }
+
+        const data: unknown = await response.json();
+
+        if (
+          !Array.isArray(data) ||
+          !data.every(
+            (item) => typeof item === "string"
+          )
+        ) {
+          throw new Error("Invalid status response");
+        }
+
+        if (!cancelled) {
+          setStatuses(
+            Array.from(
+              new Set([
+                ...DEFAULT_STATUSES,
+                ...data,
+                currentStatus,
+              ])
+            )
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setError(
+            "Could not load custom statuses."
+          );
+        }
+      }
+    }
+
+    loadStatuses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentStatus]);
 
   function handleSave() {
     setMessage("");
@@ -119,7 +191,7 @@ export default function StatusSelector({
       try {
         await updateApplicationStatus(
           applicationId,
-          selectedStatus
+          selectedStatus as RecruitmentStatus
         );
 
         setSavedStatus(selectedStatus);
@@ -146,16 +218,20 @@ export default function StatusSelector({
           id={`status-${applicationId}`}
           value={selectedStatus}
           onChange={(event) =>
-            setSelectedStatus(
-              event.target.value as RecruitmentStatus
-            )
+            setSelectedStatus(event.target.value)
           }
           disabled={isPending}
           className="min-w-48 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm"
         >
-          {statuses.map((status) => (
+          {Array.from(
+            new Set([
+              ...statuses,
+              selectedStatus,
+            ])
+          ).map((status) => (
             <option key={status} value={status}>
-              {t.statuses[status]}
+              {t.statuses[status] ??
+                status.replaceAll("_", " ")}
             </option>
           ))}
         </select>
@@ -163,7 +239,10 @@ export default function StatusSelector({
         <button
           type="button"
           onClick={handleSave}
-          disabled={isPending || selectedStatus === savedStatus}
+          disabled={
+            isPending ||
+            selectedStatus === savedStatus
+          }
           className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? t.saving : t.save}
@@ -171,13 +250,19 @@ export default function StatusSelector({
       </div>
 
       {message && (
-        <p role="status" className="mt-3 text-sm text-green-700">
+        <p
+          role="status"
+          className="mt-3 text-sm text-green-700"
+        >
           {message}
         </p>
       )}
 
       {error && (
-        <p role="alert" className="mt-3 text-sm text-red-600">
+        <p
+          role="alert"
+          className="mt-3 text-sm text-red-600"
+        >
           {error}
         </p>
       )}

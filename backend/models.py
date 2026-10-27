@@ -115,3 +115,27 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now
     )
+
+class RecruitmentRole(Base):
+    __tablename__ = "recruitment_roles"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False
+    )
+    permissions: Mapped[str] = mapped_column(
+        Text, nullable=False, default="[]"
+    )
+
+
+class RecruitmentStatus(Base):
+    __tablename__ = "recruitment_statuses"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True
+    )
+    name: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False
+    )

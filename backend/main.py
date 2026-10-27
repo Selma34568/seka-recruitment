@@ -6,6 +6,9 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
+from admin_routes import router as admin_router
+from models import RecruitmentStatus
+from admin_permissions import get_user_permissions
 
 from database import get_db
 from models import Application, Branch, Candidate
@@ -15,12 +18,33 @@ from schemas import (
     CandidateResponse,
     StatusUpdate,
 )
+DEFAULT_STATUSES = {
+    "NEW",
+    "REVIEW",
+    "INTERVIEW",
+    "OFFER",
+    "HIRED",
+    "REJECTED",
+}
+
+
+def get_allowed_statuses(db: Session) -> set[str]:
+    custom_statuses = db.scalars(
+        select(RecruitmentStatus.name)
+    ).all()
+
+    return DEFAULT_STATUSES | {
+        name.strip().upper()
+        for name in custom_statuses
+    }
 
 app = FastAPI(
     title="SEKA Recruitment Management API",
     version="0.2.0",
 )
 app.include_router(intake_router)
+
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,7 +77,7 @@ def list_candidates(
     db: Session = Depends(get_db),
 ):
     statement = (
-        candidate_scope_query(user)
+        candidate_scope_query(user, db)
         .options(
             selectinload(Candidate.applications)
             .selectinload(Application.branch)
@@ -92,7 +116,7 @@ def get_candidate(
     from sqlalchemy.orm import with_loader_criteria
 
     statement = (
-        candidate_scope_query(user)
+        candidate_scope_query(user, db)
         .where(Candidate.id == candidate_id)
         .options(
             selectinload(Candidate.applications)
@@ -100,7 +124,10 @@ def get_candidate(
         )
     )
 
-    if user.role == "BRANCH_MANAGER":
+    if (
+    user.role == "BRANCH_MANAGER"
+    or "view_branch_candidates" in get_user_permissions(user, db)
+):
         if user.branch_id is None:
             raise HTTPException(403, "No assigned branch")
 
@@ -176,10 +203,7 @@ def update_application_status(
     db: Session = Depends(get_db),
 ):
 
-    allowed_statuses = {
-        "NEW", "REVIEW", "INTERVIEW",
-        "OFFER", "HIRED", "REJECTED"
-    }
+    allowed_statuses = get_allowed_statuses(db)
 
     status = data.status.upper()
 
@@ -467,10 +491,7 @@ def update_demo_application_status(
     if os.getenv("SEKA_DEMO_MODE", "").lower() != "true":
         raise HTTPException(404, "Demo mode disabled")
 
-    allowed_statuses = {
-        "NEW", "REVIEW", "INTERVIEW",
-        "OFFER", "HIRED", "REJECTED"
-    }
+    allowed_statuses = get_allowed_statuses(db)
 
     status = data.status.upper()
 
@@ -685,3 +706,18 @@ def save_demo_hr_notes(
         "application_id": application.id,
         "notes": application.notes,
     }
+app.include_router(admin_router)
+
+@app.get("/demo/statuses")
+def list_demo_statuses(
+    db: Session = Depends(get_db),
+):
+    import os
+
+    if os.getenv("SEKA_DEMO_MODE", "").lower() != "true":
+        raise HTTPException(
+            status_code=404,
+            detail="Demo mode disabled",
+        )
+
+    return sorted(get_allowed_statuses(db))
