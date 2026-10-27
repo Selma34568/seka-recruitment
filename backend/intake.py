@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from uuid import uuid4
+from email_parser import parse_application_email
 
 from fastapi import (
     APIRouter, Depends, File, Form,
@@ -145,15 +146,27 @@ async def submit_application(
     try:
         destination.write_bytes(content)
 
-        candidate = Candidate(
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            cv_filename=filename,
+        
+        candidate = db.scalar(
+            select(Candidate)
+            .where(func.lower(Candidate.email) == email.lower())
+            .order_by(Candidate.id)
+            .limit(1)
         )
 
-        db.add(candidate)
+        if candidate is None:
+            candidate = Candidate(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                cv_filename=filename,
+            )
+            db.add(candidate)
+        else:
+            candidate.cv_filename = filename
+
         db.flush()
+
 
         application = Application(
             candidate_id=candidate.id,
@@ -183,3 +196,62 @@ async def submit_application(
         "status": "NEW",
         "email_sent": False,
     }
+@router.post("/email/preview")
+async def preview_email_application(
+    candidate_name: str = Form(...),
+    email: str = Form(...),
+    subject: str = Form(...),
+    body: str = Form(...),
+    cv: UploadFile | None = File(None),
+):
+    parsed = parse_application_email(subject, body)
+
+    content, file_error = await read_cv(cv)
+
+    result = validate_submission(
+        parsed["city"],
+        parsed["position"],
+        content,
+        file_error,
+    )
+
+    email_preview = None
+
+    if not result.is_complete:
+        email_preview = build_missing_information_email(
+            candidate_name,
+            result,
+        )
+
+    return {
+        "candidate_name": candidate_name,
+        "email": email,
+        "city": parsed["city"],
+        "position": parsed["position"],
+        "is_complete": result.is_complete,
+        "missing_fields": result.missing_fields,
+        "errors": result.errors,
+        "email_preview": email_preview,
+        "email_sent": False,
+    }
+@router.post("/email/submit", status_code=201)
+async def submit_email_application(
+    candidate_name: str = Form(...),
+    email: str = Form(...),
+    subject: str = Form(...),
+    body: str = Form(...),
+    cv: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    user=Depends(require_roles("ADMIN", "HR_MANAGER")),
+):
+    parsed = parse_application_email(subject, body)
+
+    return await submit_application(
+        candidate_name=candidate_name,
+        email=email,
+        city=parsed["city"],
+        position=parsed["position"],
+        cv=cv,
+        db=db,
+        user=user,
+    )

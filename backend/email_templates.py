@@ -10,9 +10,9 @@ def build_missing_information_email(
         raise ValueError("Application is already complete")
 
     missing_messages = {
-        "city": "Your preferred city or branch",
-        "position": "The position you are applying for",
-        "cv": "Your CV in PDF format",
+        "city": "Miasto lub oddział, w którym chcesz pracować",
+        "position": "Stanowisko, o które się ubiegasz",
+        "cv": "CV w formacie PDF",
     }
 
     items = [
@@ -23,35 +23,32 @@ def build_missing_information_email(
 
     if result.errors:
         items.append(
-            "A valid, readable PDF version of your CV"
+            "Poprawny i możliwy do odczytania plik CV w formacie PDF"
         )
 
     items = list(dict.fromkeys(items))
+    missing_list = "\n".join(f"- {item}" for item in items)
 
-    missing_list = "\n".join(
-        f"- {item}" for item in items
-    )
+    subject = "SEKA Rekrutacja – Prośba o uzupełnienie danych"
 
-    subject = "SEKA Recruitment – Additional Information Required"
+    body = f"""Dzień dobry, {candidate_name},
 
-    body = f"""Dear {candidate_name},
+Dziękujemy za zainteresowanie pracą w SEKA.
 
-Thank you for your interest in SEKA.
+Po zapoznaniu się z przesłaną aplikacją zauważyliśmy,
+że niektóre informacje są niekompletne lub wymagają poprawy.
 
-We have reviewed your application and noticed that
-some information is missing or needs correction.
-
-Please provide the following:
+Uprzejmie prosimy o uzupełnienie następujących informacji:
 
 {missing_list}
 
-You may reply to this email with the requested
-information or an updated CV.
+Prosimy o przesłanie brakujących informacji lub poprawionego
+CV w odpowiedzi na tę wiadomość.
 
-Thank you for your cooperation.
+Dziękujemy za współpracę.
 
-Best regards,
-SEKA Recruitment Team
+Z poważaniem,
+Zespół Rekrutacji SEKA
 """
 
     return {

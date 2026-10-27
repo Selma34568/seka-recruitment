@@ -9,14 +9,21 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import User
+from models import RecruitmentRole, User
 
 security = HTTPBearer()
 
 TENANT_ID = os.getenv("AZURE_TENANT_ID")
 API_AUDIENCE = os.getenv("AZURE_API_AUDIENCE")
 
-VALID_ROLES = {"ADMIN", "HR_MANAGER", "BRANCH_MANAGER"}
+
+VALID_ROLES = {
+    "SYSTEM_ADMIN",
+    "ADMIN",
+    "HR_MANAGER",
+    "BRANCH_MANAGER",
+}
+
 
 
 def get_current_user(
@@ -73,11 +80,20 @@ def get_current_user(
             detail="User is not authorized",
         )
 
+    
     if user.role not in VALID_ROLES:
-        raise HTTPException(
-            status_code=403,
-            detail="Invalid user role",
+        custom_role = db.scalar(
+            select(RecruitmentRole).where(
+                RecruitmentRole.name == user.role
+            )
         )
+
+        if custom_role is None:
+            raise HTTPException(
+                status_code=403,
+                detail="Invalid user role",
+            )
+
 
     return user
 

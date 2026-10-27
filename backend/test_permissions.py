@@ -14,7 +14,7 @@ def check_access(db, role, branch_id=None):
         branch_id=branch_id,
     )
 
-    query = candidate_scope_query(user)
+    query = candidate_scope_query(user, db)
     candidates = db.scalars(
         query.order_by(Candidate.id)
     ).all()
