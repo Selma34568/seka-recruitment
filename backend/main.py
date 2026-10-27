@@ -2,7 +2,7 @@ from auth import get_current_user, require_roles
 from intake import router as intake_router
 from permissions import candidate_scope_query
 from models import User
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -515,18 +515,25 @@ def update_demo_application_status(
 import os
 
 
-def require_local_demo():
+def require_local_demo(request: Request):
     if os.getenv("SEKA_DEMO_MODE", "").lower() != "true":
         raise HTTPException(404, "Demo mode disabled")
+
+    if request.client is None or request.client.host not in {
+        "127.0.0.1",
+        "::1",
+    }:
+        raise HTTPException(403, "Local demo only")
 
 
 @app.post("/demo/candidates/{candidate_id}/cv")
 async def upload_demo_cv(
     candidate_id: int,
+    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    require_local_demo()
+    require_local_demo(request)
 
     candidate = db.get(Candidate, candidate_id)
 
@@ -579,9 +586,10 @@ async def upload_demo_cv(
 @app.get("/demo/candidates/{candidate_id}/cv")
 def view_demo_cv(
     candidate_id: int,
+    request: Request,
     db: Session = Depends(get_db),
 ):
-    require_local_demo()
+    require_local_demo(request)
 
     candidate = db.get(Candidate, candidate_id)
 
@@ -598,7 +606,7 @@ def view_demo_cv(
         media_type="application/pdf",
         content_disposition_type="inline",
     )
-from fastapi import Request
+
 
 @app.post(
     "/demo/candidates",
