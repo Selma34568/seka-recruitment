@@ -1,3 +1,4 @@
+from seka_features import router as seka_features_router, find_candidate, normalize_email, audit
 from auth import get_current_user, require_roles
 from intake import router as intake_router
 from permissions import candidate_scope_query
@@ -163,14 +164,12 @@ def create_candidate(
     if branch is None:
         raise HTTPException(status_code=404, detail="Branch not found")
 
-    candidate = Candidate(
-        first_name=data.first_name,
-        last_name=data.last_name,
-        email=data.email,
-        phone=data.phone,
-    )
-
-    db.add(candidate)
+    candidate = find_candidate(db, data.email)
+    is_new = candidate is None
+    if is_new:
+        candidate = Candidate(first_name=data.first_name, last_name=data.last_name,
+                              email=normalize_email(data.email), phone=data.phone)
+        db.add(candidate)
     db.flush()
 
     application = Application(
@@ -181,6 +180,9 @@ def create_candidate(
     )
 
     db.add(application)
+    db.flush()
+    if is_new: audit(db, "CANDIDATE_CREATED", candidate.id, actor="demo" if "request" in locals() else "user")
+    audit(db, "APPLICATION_CREATED", candidate.id, application.id, {"position": application.position, "branch_id": application.branch_id})
     db.commit()
 
     statement = (
@@ -233,7 +235,9 @@ def update_application_status(
             )
 
 
+    previous_status = application.status
     application.status = status
+    audit(db, "STATUS_CHANGED", application.candidate_id, application.id, {"old": previous_status, "new": status})
     db.commit()
 
     return {
@@ -307,6 +311,10 @@ async def upload_candidate_cv(
 
     previous_file = candidate.cv_filename
     candidate.cv_filename = filename
+    latest = db.scalar(select(Application).where(Application.candidate_id == candidate.id).order_by(Application.id.desc()))
+    if latest:
+        latest.cv_filename = filename
+    audit(db, "CV_UPLOADED", candidate.id, latest.id if latest else None, {"filename": filename})
 
     try:
         db.commit()
@@ -315,10 +323,7 @@ async def upload_candidate_cv(
         destination.unlink(missing_ok=True)
         raise
 
-    if previous_file:
-        (UPLOAD_DIR / Path(previous_file).name).unlink(
-            missing_ok=True
-        )
+    # Keep older CVs: each application may reference an earlier version.
 
     return {
         "message": "CV uploaded successfully",
@@ -503,7 +508,9 @@ def update_demo_application_status(
     if application is None:
         raise HTTPException(404, "Application not found")
 
+    previous_status = application.status
     application.status = status
+    audit(db, "STATUS_CHANGED", application.candidate_id, application.id, {"old": previous_status, "new": status})
     db.commit()
 
     return {
@@ -567,6 +574,10 @@ async def upload_demo_cv(
 
     previous_file = candidate.cv_filename
     candidate.cv_filename = filename
+    latest = db.scalar(select(Application).where(Application.candidate_id == candidate.id).order_by(Application.id.desc()))
+    if latest:
+        latest.cv_filename = filename
+    audit(db, "CV_UPLOADED", candidate.id, latest.id if latest else None, {"filename": filename})
 
     try:
         db.commit()
@@ -575,10 +586,7 @@ async def upload_demo_cv(
         destination.unlink(missing_ok=True)
         raise
 
-    if previous_file:
-        (UPLOAD_DIR / Path(previous_file).name).unlink(
-            missing_ok=True
-        )
+    # Keep older CVs: each application may reference an earlier version.
 
     return {"uploaded": True, "filename": filename}
 
@@ -632,14 +640,12 @@ def create_demo_candidate(
     if branch is None:
         raise HTTPException(404, "Branch not found")
 
-    candidate = Candidate(
-        first_name=data.first_name,
-        last_name=data.last_name,
-        email=data.email,
-        phone=data.phone,
-    )
-
-    db.add(candidate)
+    candidate = find_candidate(db, data.email)
+    is_new = candidate is None
+    if is_new:
+        candidate = Candidate(first_name=data.first_name, last_name=data.last_name,
+                              email=normalize_email(data.email), phone=data.phone)
+        db.add(candidate)
     db.flush()
 
     application = Application(
@@ -650,6 +656,9 @@ def create_demo_candidate(
     )
 
     db.add(application)
+    db.flush()
+    if is_new: audit(db, "CANDIDATE_CREATED", candidate.id, actor="demo" if "request" in locals() else "user")
+    audit(db, "APPLICATION_CREATED", candidate.id, application.id, {"position": application.position, "branch_id": application.branch_id})
     db.commit()
 
     statement = (
@@ -704,8 +713,9 @@ def save_demo_hr_notes(
             detail="Application not found",
         )
 
+    old_note = application.notes
     application.notes = data.notes.strip()
-
+    audit(db, "NOTES_UPDATED", application.candidate_id, application.id, {"previous_length": len(old_note or ""), "new_length": len(application.notes or "")})
     db.commit()
     db.refresh(application)
 
@@ -729,3 +739,5 @@ def list_demo_statuses(
         )
 
     return sorted(get_allowed_statuses(db))
+
+app.include_router(seka_features_router)

@@ -1,3 +1,4 @@
+from seka_features import audit, normalize_email, find_candidate
 
 from pathlib import Path
 from uuid import uuid4
@@ -92,7 +93,7 @@ async def submit_application(
     user=Depends(require_roles("ADMIN", "HR_MANAGER")),
 ):
     name = candidate_name.strip()
-    email = email.strip()
+    email = normalize_email(email)
 
     if len(name.split()) < 2:
         raise HTTPException(
@@ -147,14 +148,10 @@ async def submit_application(
         destination.write_bytes(content)
 
         
-        candidate = db.scalar(
-            select(Candidate)
-            .where(func.lower(Candidate.email) == email.lower())
-            .order_by(Candidate.id)
-            .limit(1)
-        )
+        candidate = find_candidate(db, email)
 
-        if candidate is None:
+        is_new = candidate is None
+        if is_new:
             candidate = Candidate(
                 first_name=first_name,
                 last_name=last_name,
@@ -173,6 +170,7 @@ async def submit_application(
             branch_id=branch.id,
             position=normalized_position,
             status="NEW",
+            cv_filename=filename,
         )
 
         db.add(application)
@@ -180,7 +178,10 @@ async def submit_application(
 
         candidate_id = candidate.id
         application_id = application.id
-
+        if is_new:
+            audit(db, "CANDIDATE_CREATED", candidate_id, actor="intake")
+        audit(db, "APPLICATION_CREATED", candidate_id, application_id, {"position": normalized_position, "branch_city": branch.city}, actor="intake")
+        audit(db, "CV_UPLOADED", candidate_id, application_id, {"filename": filename}, actor="intake")
         db.commit()
 
     except Exception:

@@ -6,6 +6,8 @@ import Link from "next/link";
 import CVUpload from "./CVUpload";
 import StatusSelector from "./StatusSelector";
 import HRNotes from "./HRNotes";
+import ApplicationHistory from "./ApplicationHistory";
+import EmailThread from "./EmailThread";
 import type { Candidate } from "../../../lib/api";
 
 type Language = "PL" | "EN";
@@ -238,6 +240,8 @@ export default function CandidateDetailClient({
   applicationId={application.id}
   initialNotes={application.notes}
 />
+                  <ApplicationHistory candidateId={candidate.id} applicationId={application.id}/>
+                  <EmailThread candidateId={candidate.id} applicationId={application.id}/>
                 </div>
               ))}
 

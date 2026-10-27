@@ -1,0 +1,11 @@
+"use client";
+import { useEffect,useState } from "react";
+import { API_URL } from "../../../lib/api";
+type Message={id:number;direction:string;from_address:string;to_address:string;subject:string;body:string;status:string;created_at:string};
+export default function EmailThread({candidateId,applicationId}:{candidateId:number;applicationId?:number}){
+ const [messages,setMessages]=useState<Message[]>([]);const [subject,setSubject]=useState("");const [body,setBody]=useState("");const [notice,setNotice]=useState("");
+ const load=()=>fetch(`${API_URL}/demo/candidates/${candidateId}/emails`,{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("Not available");return r.json()}).then(d=>setMessages(d.messages??[])).catch(()=>setNotice("Demo mailbox unavailable (demo mode may be disabled)"));
+ useEffect(()=>{load()},[candidateId]);
+ async function save(e:React.FormEvent){e.preventDefault();try{const r=await fetch(`${API_URL}/demo/candidates/${candidateId}/emails`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject,body,application_id:applicationId??null})});if(!r.ok)throw Error("Save failed");setNotice("DEMO ONLY — saved locally, NO email was sent.");setSubject("");setBody("");load()}catch{setNotice("Could not save demo message")}}
+ return <section className="mt-4 rounded-lg border p-4"><h4 className="font-bold">E-mail / Wiadomości (DEMO)</h4><p className="text-xs text-amber-700">No real emails are sent or received. kariera@seka.pl is not connected.</p><form onSubmit={save} className="mt-3 grid gap-2"><input aria-label="Subject" className="border rounded p-2" placeholder="Temat / Subject" required value={subject} onChange={e=>setSubject(e.target.value)}/><textarea aria-label="Message" className="border rounded p-2" placeholder="Treść / Message" required value={body} onChange={e=>setBody(e.target.value)}/><button className="rounded bg-blue-600 px-3 py-2 text-white" type="submit">Save demo message (not send)</button></form>{notice&&<p className="mt-2 text-sm">{notice}</p>}{messages.map(m=><article key={m.id} className="mt-3 border-b py-2 text-sm"><b>{m.subject}</b> · {m.status}<p>{m.body}</p><small>{new Date(m.created_at).toLocaleString()}</small></article>)}</section>
+}

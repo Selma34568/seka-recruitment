@@ -71,6 +71,7 @@ class Application(Base):
     status: Mapped[str] = mapped_column(
         String(30), default="NEW"
     )
+    cv_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )
@@ -139,3 +140,29 @@ class RecruitmentStatus(Base):
     name: Mapped[str] = mapped_column(
         String(100), unique=True, nullable=False
     )
+
+
+class ApplicationEvent(Base):
+    __tablename__ = "application_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidate_id: Mapped[int | None] = mapped_column(ForeignKey("candidates.id"), nullable=True)
+    application_id: Mapped[int | None] = mapped_column(ForeignKey("applications.id"), nullable=True)
+    event_type: Mapped[str] = mapped_column(String(50))
+    payload: Mapped[str] = mapped_column(Text, default="{}")
+    actor_label: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class EmailMessage(Base):
+    __tablename__ = "email_messages"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id"))
+    application_id: Mapped[int | None] = mapped_column(ForeignKey("applications.id"), nullable=True)
+    direction: Mapped[str] = mapped_column(String(20))
+    sender: Mapped[str] = mapped_column(String(255))
+    recipient: Mapped[str] = mapped_column(String(255))
+    subject: Mapped[str] = mapped_column(String(500), default="")
+    body: Mapped[str] = mapped_column(Text, default="")
+    provider: Mapped[str] = mapped_column(String(30), default="demo")
+    status: Mapped[str] = mapped_column(String(30), default="simulated")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

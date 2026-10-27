@@ -29,6 +29,7 @@ class ApplicationResponse(BaseModel):
     applied_at: datetime
     branch: BranchResponse
     notes: str | None = None
+    cv_filename: str | None = None
 
 
 class CandidateResponse(BaseModel):
