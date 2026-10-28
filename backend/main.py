@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 from admin_routes import router as admin_router
 from models import RecruitmentStatus
 from admin_permissions import get_user_permissions
+from seka_features import router as seka_features_router
 
 from database import get_db
 from models import Application, Branch, Candidate
@@ -740,4 +741,5 @@ def list_demo_statuses(
 
     return sorted(get_allowed_statuses(db))
 
-app.include_router(seka_features_router)
+for route in seka_features_router.routes:
+    app.router.routes.append(route)

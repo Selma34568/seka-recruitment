@@ -6,9 +6,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from database import get_db
-from auth import get_current_user
+from auth import get_current_user, require_roles
+from graph_mail import send_seka_email
 from models import Application, Candidate, ApplicationEvent, EmailMessage
 from permissions import candidate_scope_query
+from auth import get_current_user
+
 
 router = APIRouter(tags=["SEKA additional features"])
 MAILBOX = "kariera@seka.pl"
@@ -146,3 +149,78 @@ def demo_application_cv(application_id: int, request: Request, db: Session = Dep
     if not path.is_file():
         raise HTTPException(404, 'CV file missing')
     return FileResponse(path, media_type='application/pdf', content_disposition_type='inline')
+
+
+@router.post("/candidates/{candidate_id}/emails/send")
+def send_candidate_email(
+    candidate_id: int,
+    draft: EmailDraft,
+    user=Depends(require_roles("ADMIN", "HR_MANAGER")),
+    db: Session = Depends(get_db),
+):
+    # Require real Microsoft 365 configuration.
+    if os.getenv("SEKA_REAL_EMAIL_ENABLED", "false").lower() != "true":
+        raise HTTPException(
+            status_code=503,
+            detail="Real email sending is not configured",
+        )
+
+    # Never use the unauthenticated demo role selector.
+    candidate = db.scalar(
+        candidate_scope_query(user, db).where(
+            Candidate.id == candidate_id
+        )
+    )
+    if candidate is None:
+        raise HTTPException(404, "Candidate not found")
+
+    if draft.application_id is not None:
+        application = db.get(Application, draft.application_id)
+        if not application or application.candidate_id != candidate_id:
+            raise HTTPException(400, "Invalid application")
+
+    if not draft.subject.strip() or not draft.body.strip():
+        raise HTTPException(422, "Subject and message are required")
+
+    # Graph 202 means accepted, not guaranteed delivered.
+    try:
+        result = send_seka_email(
+            to_email=candidate.email,
+            subject=draft.subject,
+            message=draft.body,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=502,
+            detail="Microsoft Graph email request failed",
+        )
+
+    message = EmailMessage(
+        candidate_id=candidate.id,
+        application_id=draft.application_id,
+        direction="outgoing",
+        sender=MAILBOX,
+        recipient=candidate.email,
+        subject=draft.subject,
+        body=draft.body,
+        provider="microsoft_graph",
+        status="accepted",
+    )
+
+    db.add(message)
+    audit(
+        db,
+        "EMAIL_ACCEPTED",
+        candidate.id,
+        draft.application_id,
+        {"subject": draft.subject},
+        "authenticated",
+    )
+    db.commit()
+    db.refresh(message)
+
+    return {
+        **email_dict(message),
+        "email_sent": False,
+        "accepted_by_graph": result["accepted"],
+    }
